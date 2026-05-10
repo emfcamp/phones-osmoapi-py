@@ -1,0 +1,17 @@
+[package]
+name = "osmoapi"
+version = "0.1.0"
+edition = "2024"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "osmoapi"
+crate-type = ["cdylib"]
+
+[features]
+default = ["python-bindings"]
+python-bindings = ["pyo3"]
+
+[dependencies]
+rand = "0.10"
+pyo3 = { version = "0.28.3", optional = true }
