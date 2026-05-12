@@ -82,31 +82,27 @@ jobs:
         with:
           name: wheels-sdist
           path: dist
-
-  ## We aren't releasing this to pypi, just going to use the whl (probably...)
-  # release:
-  #   name: Release
-  #   runs-on: ubuntu-latest
-  #   if: ${{ startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
-  #   needs: [linux, musllinux, sdist]
-  #   permissions:
-  #     # Use to sign the release artifacts
-  #     id-token: write
-  #     # Used to upload release artifacts
-  #     contents: write
-  #     # Used to generate artifact attestation
-  #     attestations: write
-  #   steps:
-  #     - uses: actions/download-artifact@v7
-  #     - name: Generate artifact attestation
-  #       uses: actions/attest@v4
-  #       with:
-  #         subject-path: 'wheels-*/*'
-  #     - name: Install uv
-  #       if: ${{ startsWith(github.ref, 'refs/tags/') }}
-  #       uses: astral-sh/setup-uv@v7
-  #     - name: Publish to PyPI
-  #       if: ${{ startsWith(github.ref, 'refs/tags/') }}
-  #       run: uv publish 'wheels-*/*'
-  #       env:
-  #         UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    if: ${{ startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
+    needs: [linux, musllinux, sdist]
+    permissions:
+      contents: write
+      attestations: write
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          merge-multiple: true
+          path: dist
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/*
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: dist/*
+          generate_release_notes: true
