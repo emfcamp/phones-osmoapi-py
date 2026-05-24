@@ -99,10 +99,11 @@ impl FromStr for ControlResponse {
 
         match s.split_once(' ') {
             Some((kind @ "GET_REPLY" | kind @ "SET_REPLY", rest)) => {
-                let rest = rest.split(' ').collect::<Vec<_>>();
-                let Ok(&[id, var, value]): Result<&[&str; 3], _> = (&rest as &[_]).try_into()
+                let Some((id, var, value)) = rest
+                    .split_once(' ')
+                    .and_then(|(a, rest)| rest.split_once(' ').map(|(b, rest)| (a, b, rest)))
                 else {
-                    return Err(format!("{kind} response had {} fields", rest.len()).into());
+                    return Err(format!("{kind} response had insufficient spaces").into());
                 };
                 let id = parse_id(id)?;
 
@@ -376,6 +377,15 @@ mod tests {
                 id: 42,
                 var: "zone".to_string(),
                 value: "honk".to_string(),
+            }
+        );
+
+        assert_eq!(
+            ControlResponse::from_str("SET_REPLY 42 zone honk with spaces whee").unwrap(),
+            ControlResponse::SetReply {
+                id: 42,
+                var: "zone".to_string(),
+                value: "honk with spaces whee".to_string(),
             }
         );
 
